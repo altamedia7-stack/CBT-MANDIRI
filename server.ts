@@ -25,8 +25,15 @@ function getDB() {
       classes: [{ id: "1", name: "X-MIPA-1", level: "SMA" }],
       subjects: [{ id: "1", name: "Matematika" }],
       rooms: [{ id: "1", name: "Lab Komputer 1" }],
-      exams: [],
-      questions: [],
+      exams: [
+        { id: "1", packetId: "1", name: "UTS Matematika Semester Ganjil", isActive: true, durationMinutes: 60, type: "UTS" }
+      ],
+      questions: [
+        { id: "q1", packetId: "1", type: "mcq", text: "Siapakah penemu lampu pijar?", options: [{ id: "a", text: "Albert Einstein" }, { "id": "b", "text": "Thomas Alva Edison" }, { "id": "c", "text": "Isaac Newton" }, { "id": "d", "text": "Nikola Tesla" }] },
+        { id: "q2", packetId: "1", type: "mcq", text: "Berapakah hasil dari 15 x 20?", options: [{ id: "a", text: "200" }, { id: "b", "text": "250" }, { id: "c", "text": "300" }, { id: "d", "text": "350" }] },
+        { id: "q3", packetId: "1", type: "essay", text: "Jelaskan apa yang dimaksud dengan fotosintesis!" },
+        { id: "q4", packetId: "1", type: "mcq", text: "Dengarkan audio dan pilih jawaban yang benar.", media: { type: "audio", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" }, options: [{ id: "a", text: "Sebutkan nama hewan" }, { id: "b", "text": "Sebutkan nama bunga" }] }
+      ],
       results: []
     };
     fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));
