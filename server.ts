@@ -17,7 +17,9 @@ const firebaseConfig = require("./firebase-applet-config.json");
 
 console.log("Starting server with Project ID:", firebaseConfig.projectId);
 
-let db: ReturnType<typeof admin.firestore> | null = null;
+import { getFirestore } from "firebase-admin/firestore";
+
+let db: ReturnType<typeof getFirestore> | null = null;
 let firebaseInitError = "";
 
 // Initialize Firebase Admin safely
@@ -43,7 +45,9 @@ if (!admin.apps.length) {
       admin.initializeApp({ projectId: firebaseConfig.projectId });
       console.log("Firebase Admin initialized using Default Credentials.");
     }
-    db = admin.firestore(firebaseConfig.firestoreDatabaseId || undefined);
+    
+    // Modern firebase-admin v12+ way to get firestore instance
+    db = getFirestore(admin.app(), firebaseConfig.firestoreDatabaseId || undefined);
     if (firebaseConfig.firestoreDatabaseId) {
         console.log("Using Firestore Database ID:", firebaseConfig.firestoreDatabaseId);
     }
@@ -52,7 +56,7 @@ if (!admin.apps.length) {
     firebaseInitError = error.message;
   }
 } else {
-  db = admin.firestore(firebaseConfig.firestoreDatabaseId || undefined);
+  db = getFirestore(admin.app(), firebaseConfig.firestoreDatabaseId || undefined);
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
