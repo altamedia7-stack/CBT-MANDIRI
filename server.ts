@@ -20,10 +20,20 @@ console.log("Starting server with Project ID:", firebaseConfig.projectId);
 // Initialize Firebase Admin
 if (!admin.apps.length) {
   try {
-    admin.initializeApp({
-      projectId: firebaseConfig.projectId,
-    });
-    console.log("Firebase Admin initialized successfully");
+    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (serviceAccountEnv) {
+      const serviceAccount = JSON.parse(serviceAccountEnv);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: firebaseConfig.projectId,
+      });
+      console.log("Firebase Admin initialized successfully using Service Account configuration.");
+    } else {
+      admin.initializeApp({
+        projectId: firebaseConfig.projectId,
+      });
+      console.log("Firebase Admin initialized using Default Application Credentials.");
+    }
   } catch (error) {
     console.error("Firebase Admin initialization failed:", error);
   }

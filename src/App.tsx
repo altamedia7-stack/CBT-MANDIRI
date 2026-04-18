@@ -55,7 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials)
     });
-    if (!res.ok) throw new Error('Login failed');
+    
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Server Error: ${res.status}`);
+    }
+    
     const data = await res.json();
     setUser(data);
   };
@@ -172,9 +177,10 @@ function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setError('');
       await login(form);
     } catch (err: any) {
-      setError('Username atau password salah');
+      setError(err.message || 'Username atau password salah');
     }
   };
 
