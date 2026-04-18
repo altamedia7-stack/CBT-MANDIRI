@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile for teachers, admins, and students",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "guru", "siswa"] },
+        "classId": { "type": "string" },
+        "examKey": { "type": "string" }
+      },
+      "required": ["username", "name", "role"]
+    },
+    "Room": {
+      "title": "Room",
+      "description": "Exam room",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "Active exam session configuration",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "packetId": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "durationMinutes": { "type": "number" },
+        "type": { "type": "string" }
+      },
+      "required": ["name", "packetId", "isActive"]
+    },
+    "Question": {
+      "title": "Question",
+      "description": "Single question in a packet",
+      "type": "object",
+      "properties": {
+        "packetId": { "type": "string" },
+        "type": { "type": "string", "enum": ["mcq", "essay", "true_false"] },
+        "text": { "type": "string" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" }
+            }
+          }
+        },
+        "media": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "url": { "type": "string" }
+          }
+        }
+      },
+      "required": ["packetId", "type", "text"]
+    },
+    "Result": {
+      "title": "Result",
+      "description": "Student exam session results",
+      "type": "object",
+      "properties": {
+        "examId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "answers": { "type": "array" },
+        "violationCount": { "type": "number" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "isFinished": { "type": "boolean" },
+        "remainingTime": { "type": "number" }
+      },
+      "required": ["examId", "studentId", "isFinished"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Profiles for all users"
+    },
+    "/rooms/{roomId}": {
+      "schema": "Room",
+      "description": "Exam room configurations"
+    },
+    "/exams/{examId}": {
+      "schema": "Exam",
+      "description": "Upcoming or active exams"
+    },
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Questions bank"
+    },
+    "/results/{resultId}": {
+      "schema": "Result",
+      "description": "Tracking student sessions and answers"
+    }
+  }
+}

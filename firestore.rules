@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Catch-all deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function isRole(role) {
+      return isSignedIn() && getUserData(request.auth.uid).role == role;
+    }
+
+    function isAdmin() { return isRole('admin'); }
+    function isGuru() { return isRole('guru') || isAdmin(); }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    // --- Collections ---
+
+    // Users
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isOwner(userId);
+      
+      function isValidUser(data) {
+        return data.keys().hasAll(['username', 'name', 'role']) &&
+               data.username is string && data.username.size() < 100 &&
+               data.name is string && data.name.size() < 200 &&
+               data.role in ['admin', 'guru', 'siswa'];
+      }
+    }
+
+    // Rooms
+    match /rooms/{roomId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+      
+      function isValidRoom(data) {
+        return data.name is string && data.name.size() < 100;
+      }
+    }
+
+    // Exams
+    match /exams/{examId} {
+      allow read: if isSignedIn();
+      allow write: if isGuru();
+      
+      function isValidExam(data) {
+        return data.name is string && data.name.size() < 200 &&
+               data.packetId is string && data.isActive is bool;
+      }
+    }
+
+    // Questions
+    match /questions/{questionId} {
+      allow read: if isSignedIn();
+      allow write: if isGuru();
+    }
+
+    // Results
+    match /results/{resultId} {
+      allow read: if isGuru() || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.studentId == request.auth.uid && 
+                   !resource.data.isFinished;
+      
+      function isValidResult(data) {
+        return data.examId is string && data.studentId == request.auth.uid;
+      }
+    }
+  }
+}

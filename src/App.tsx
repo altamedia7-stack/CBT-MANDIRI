@@ -339,10 +339,12 @@ function MasterData() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/data/rooms').then(res => res.json()).then(data => {
-      setRooms(data);
-      setLoading(false);
-    });
+    fetch('/api/data/rooms')
+      .then(res => res.json())
+      .then(data => {
+        setRooms(Array.isArray(data) ? data : []);
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -377,10 +379,12 @@ function BankSoal() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/data/questions').then(res => res.json()).then(data => {
-      setQuestions(data);
-      setLoading(false);
-    });
+    fetch('/api/data/questions')
+      .then(res => res.json())
+      .then(data => {
+        setQuestions(Array.isArray(data) ? data : []);
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -437,7 +441,11 @@ function AnalysisView() {
   const [questions, setQuestions] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/data/questions').then(res => res.json()).then(setQuestions);
+    fetch('/api/data/questions')
+      .then(res => res.json())
+      .then(data => {
+        setQuestions(Array.isArray(data) ? data : []);
+      });
   }, []);
 
   const handleAnalyze = async () => {
@@ -571,7 +579,7 @@ function SiswaDashboard() {
     fetch('/api/exam/active')
       .then(res => res.json())
       .then(data => {
-        setActiveExams(data);
+        setActiveExams(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -581,10 +589,16 @@ function SiswaDashboard() {
     try {
       setLoading(true);
       const res = await fetch(`/api/exam/${exam.id}/start`, { method: 'POST' });
+      if (!res.ok) throw new Error('Session failed');
       const sessionData = await res.json();
+      
       const qRes = await fetch('/api/data/questions');
       const allQs = await qRes.json();
-      const examQs = allQs.filter((q: any) => q.packetId === exam.packetId);
+      
+      const examQs = Array.isArray(allQs) 
+        ? allQs.filter((q: any) => q.packetId === exam.packetId)
+        : [];
+        
       setQuestions(examQs);
       setSession(sessionData);
       setCurrentExam(exam);
