@@ -1,0 +1,54 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-accent: #2563eb;
+  --color-accent-light: #eff6ff;
+  --color-bg-main: #f3f4f6;
+  --color-text-main: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-border-main: #e5e7eb;
+}
+
+body {
+  @apply font-sans antialiased bg-bg-main text-text-main selection:bg-accent-light selection:text-accent;
+}
+
+/* Custom transitions and utilities */
+.transition-all {
+  transition-duration: 200ms;
+}
+
+/* Scrollbar styles */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@layer base {
+  button {
+    @apply cursor-pointer transition-all active:scale-[0.98];
+  }
+}
+
+.card-minimal {
+  @apply bg-white border border-border-main rounded-xl p-5 shadow-sm;
+}
+
+.nav-item-minimal {
+  @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all;
+}
+
+.nav-item-active {
+  @apply bg-accent-light text-accent;
+}
+
+.nav-item-inactive {
+  @apply text-text-main hover:bg-gray-50;
+}
