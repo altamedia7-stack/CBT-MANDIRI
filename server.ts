@@ -17,37 +17,54 @@ const firebaseConfig = require("./firebase-applet-config.json");
 
 console.log("Starting server with Project ID:", firebaseConfig.projectId);
 
-// Initialize Firebase Admin
+let db: ReturnType<typeof admin.firestore> | null = null;
+let firebaseInitError = "";
+
+// Initialize Firebase Admin safely
 if (!admin.apps.length) {
   try {
     const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (serviceAccountEnv) {
-      const serviceAccount = JSON.parse(serviceAccountEnv);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: firebaseConfig.projectId,
-      });
-      console.log("Firebase Admin initialized successfully using Service Account configuration.");
+      if (serviceAccountEnv.trim().startsWith("{")) {
+        const serviceAccount = JSON.parse(serviceAccountEnv);
+        // Fix mangled newlines from Vercel env variable pasting
+        if (serviceAccount.private_key) {
+           serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+        }
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          projectId: firebaseConfig.projectId,
+        });
+        console.log("Firebase Admin initialized using Service Account.");
+      } else {
+        throw new Error("FIREBASE_SERVICE_ACCOUNT does not look like valid JSON.");
+      }
     } else {
-      admin.initializeApp({
-        projectId: firebaseConfig.projectId,
-      });
-      console.log("Firebase Admin initialized using Default Application Credentials.");
+      admin.initializeApp({ projectId: firebaseConfig.projectId });
+      console.log("Firebase Admin initialized using Default Credentials.");
     }
-  } catch (error) {
+    db = admin.firestore(firebaseConfig.firestoreDatabaseId || undefined);
+    if (firebaseConfig.firestoreDatabaseId) {
+        console.log("Using Firestore Database ID:", firebaseConfig.firestoreDatabaseId);
+    }
+  } catch (error: any) {
     console.error("Firebase Admin initialization failed:", error);
+    firebaseInitError = error.message;
   }
-}
-const db = admin.firestore(firebaseConfig.firestoreDatabaseId || undefined);
-if (firebaseConfig.firestoreDatabaseId) {
-    console.log("Using Firestore Database ID:", firebaseConfig.firestoreDatabaseId);
+} else {
+  db = admin.firestore(firebaseConfig.firestoreDatabaseId || undefined);
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
 
 // --- Database Seed (Firestore) ---
 async function seedDatabase() {
-  const usersSnapshot = await db.collection('users').limit(1).get();
+  if (!db) {
+      console.error("Skipping DB seed because Firestore did not initialize.");
+      return;
+  }
+  try {
+    const usersSnapshot = await db.collection('users').limit(1).get();
   if (usersSnapshot.empty) {
     console.log("Seeding initial data to Firestore...");
     const batch = db.batch();
@@ -80,6 +97,9 @@ async function seedDatabase() {
 
     await batch.commit();
   }
+  } catch(e) {
+    console.error("DB Seed Error:", e);
+  }
 }
 
 // --- Server Setup ---
@@ -107,6 +127,10 @@ async function startServer() {
   // --- API Routes ---
   app.post("/api/login", async (req, res) => {
     try {
+      if (!db) {
+          return res.status(500).json({ error: `Firebase failed to initialize on Vercel: ${firebaseInitError}` });
+      }
+      
       const { username, password } = req.body;
       const usersSnapshot = await db.collection('users').where('username', '==', username).limit(1).get();
       
