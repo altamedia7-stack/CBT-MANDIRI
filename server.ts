@@ -7,17 +7,15 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import admin from "firebase-admin";
 import fs from "fs";
+import { getFirestore } from "firebase-admin/firestore";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const firebaseConfig = require("./firebase-applet-config.json");
+// Import config statically so bundlers (like Vercel) know to include it
+import firebaseConfig from "./firebase-applet-config.json" with { type: "json" };
 
 console.log("Starting server with Project ID:", firebaseConfig.projectId);
-
-import { getFirestore } from "firebase-admin/firestore";
 
 let db: ReturnType<typeof getFirestore> | null = null;
 let firebaseInitError = "";
@@ -46,17 +44,23 @@ if (!admin.apps.length) {
       console.log("Firebase Admin initialized using Default Credentials.");
     }
     
-    // Modern firebase-admin v12+ way to get firestore instance
-    db = getFirestore(admin.app(), firebaseConfig.firestoreDatabaseId || undefined);
-    if (firebaseConfig.firestoreDatabaseId) {
-        console.log("Using Firestore Database ID:", firebaseConfig.firestoreDatabaseId);
+    if (admin.apps.length > 0) {
+      // Modern firebase-admin v12+ way to get firestore instance
+      db = getFirestore(admin.app(), firebaseConfig.firestoreDatabaseId || undefined);
+      if (firebaseConfig.firestoreDatabaseId) {
+          console.log("Using Firestore Database ID:", firebaseConfig.firestoreDatabaseId);
+      }
+    } else {
+       console.error("Skipping Firestore initialization because Firebase Admin app is missing.");
     }
   } catch (error: any) {
     console.error("Firebase Admin initialization failed:", error);
     firebaseInitError = error.message;
   }
 } else {
-  db = getFirestore(admin.app(), firebaseConfig.firestoreDatabaseId || undefined);
+  if (admin.apps.length > 0) {
+    db = getFirestore(admin.app(), firebaseConfig.firestoreDatabaseId || undefined);
+  }
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
