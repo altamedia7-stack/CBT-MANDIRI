@@ -11,9 +11,9 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Read config safely
-const firebaseConfigPath = path.join(__dirname, "firebase-applet-config.json");
-const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const firebaseConfig = require("./firebase-applet-config.json");
 
 console.log("Starting server with Project ID:", firebaseConfig.projectId);
 
@@ -122,8 +122,9 @@ async function startServer() {
       } else {
         res.status(401).json({ error: "Invalid credentials" });
       }
-    } catch (error) {
-      res.status(500).json({ error: "Internal server error" });
+    } catch (error: any) {
+      console.error("Firebase Login Error:", error);
+      res.status(500).json({ error: `Backend Error: ${error.message || JSON.stringify(error)}` });
     }
   });
 
